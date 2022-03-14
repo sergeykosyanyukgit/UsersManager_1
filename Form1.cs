@@ -17,24 +17,23 @@ namespace UsersManager_1
     {
         private List<int> SelectedNewUsergroups { get; set; }
         private List<Group> Groups { get; set; }
-        private List<User> Users { get; set; }
-        private BindingList<User> BlUser { get; set; }
-        private int rowIndex;
         private IDBController dBController;
         public Form1()
         {
             SelectedNewUsergroups = new List<int>();
-            BlUser = new BindingList<User>();
             InitializeComponent();
             dBController = new DBController();
-            StartConnection(this);
+            StartConnection();
         }
 
-        private void StartConnection(Form1 form)
+        private void StartConnection()
         {
             try
             {
-                dBController.StartConnection(form);
+                dBController.StartConnection();
+                UpdateGroups(dBController.RefreshGroups());
+                UpdateUsers(dBController.RefreshUsers());
+                AddGroupButton.Enabled = false;
             }
             catch (Exception ex)
             {
@@ -44,122 +43,75 @@ namespace UsersManager_1
 
         public void UpdateGroups(List<Group> groups)
         {
-            this.Groups = groups;
-            dataGridView1.DataSource = groups;
-            dataGridView1.Columns[0].HeaderText = "ID группы";
-            dataGridView1.Columns[1].HeaderText = "Название группы";
-            dataGridView1.Columns[2].HeaderText = "Сотрудников в группе";
+            Groups = groups;
+            groupsGridView.DataSource = groups;
+            groupsGridView.Columns[0].HeaderText = "ID группы";
+            groupsGridView.Columns[1].HeaderText = "Название группы";
+            groupsGridView.Columns[2].HeaderText = "Сотрудников в группе";
 
-            dataGridView1.Columns[0].Width = 110;
-            dataGridView1.Columns[1].Width = 140;
-            dataGridView1.Columns[2].Width = 150;
-            dataGridView1.AllowUserToResizeColumns = false;
-            dataGridView1.AllowUserToResizeRows = false;
-            this.checkedListBox1.Items.Clear();
+            userGroupsListBox.Items.Clear();
             foreach(var group in groups)
             {
-                this.checkedListBox1.Items.Add(group, false);
+                userGroupsListBox.Items.Add(group, false);
             }
         }
 
 
         private void AddGroupButton_Click(object sender, EventArgs e)
         {
-            dBController.CreateGroup(this.newGroupName.Text);
-            this.newGroupName.Text = "";
-            this.AddGroupButton.Enabled = false;
+            dBController.CreateGroup(newGroupName.Text);
+            UpdateGroups(dBController.RefreshGroups());
+            newGroupName.Text = "";
+            AddGroupButton.Enabled = false;
         }
 
         private void newGroupName_TextChanged(object sender, EventArgs e)
         {
-            if (this.newGroupName.Text.Length > 0)
-            {
-                this.AddGroupButton.Enabled = true;
-            }
-            else
-            {
-                this.AddGroupButton.Enabled = false;
-            }
+            AddGroupButton.Enabled = newGroupName.Text.Length > 0;
         }
 
         public void UpdateUsers(List<User> users)
         {
-            this.Users = users;
-            BlUser.Clear();
-            foreach (var user in users)
-            {
-                BlUser.Add(user);
-            }
-            dataGridView2.DataSource = BlUser;
-            dataGridView2.Columns[0].HeaderText = "ID сотрудника";
-            dataGridView2.Columns[1].HeaderText = "ФИО сотрудника";
-            dataGridView2.Columns[2].HeaderText = "Входит в группы";
-
-            dataGridView2.Columns[0].Width = 110;
-            dataGridView2.Columns[1].Width = 140;
-            dataGridView2.Columns[2].Width = 150;
-            dataGridView2.AllowUserToResizeColumns = false;
-            dataGridView2.AllowUserToResizeRows = false;
+            usersGridView.DataSource = users;
+            usersGridView.Columns[0].HeaderText = "ID сотрудника";
+            usersGridView.Columns[1].HeaderText = "ФИО сотрудника";
+            usersGridView.Columns[2].HeaderText = "Входит в группы";
         }
-        private void button2_Click(object sender, EventArgs e)
+        private void addUser_Click(object sender, EventArgs e)
         {
             SelectedNewUsergroups.Clear();
-            foreach (var item in this.checkedListBox1.CheckedItems)
+            foreach (var item in userGroupsListBox.CheckedItems)
             {
                 Group group = (Group)Convert.ChangeType(item, typeof(Group));
                 SelectedNewUsergroups.Add(group.Id);
             }
 
-            dBController.CreateUser(this.textBox1.Text, SelectedNewUsergroups);
+            dBController.CreateUser(userName.Text, SelectedNewUsergroups);
+            UpdateUsers(dBController.RefreshUsers());
+            UpdateGroups(dBController.RefreshGroups());
 
-            this.checkedListBox1.Items.Clear();
-            foreach (var group in this.Groups)
+            userGroupsListBox.Items.Clear();
+            foreach (var group in Groups)
             {
-                this.checkedListBox1.Items.Add(group, false);
+                userGroupsListBox.Items.Add(group, false);
             }
-            this.textBox1.Text = "";
-            this.button2.Enabled = false;
+            userName.Text = "";
+            addUser.Enabled = false;
         }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            this.AddGroupButton.Enabled = false;
-        }
-        private void dataGridView2_MouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        private void usersGridView_MouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                /*var rowIndex = e.RowIndex;
-                this.dataGridView2.Rows.RemoveAt(rowIndex);*/
-                this.dataGridView2.Rows[e.RowIndex].Selected = true;
-                rowIndex = e.RowIndex;
-                this.dataGridView2.CurrentCell = this.dataGridView2.Rows[e.RowIndex].Cells[0];
-                this.contextMenuStrip1.Show(this.dataGridView2, e.Location);
-                contextMenuStrip1.Show(Cursor.Position);
+                var userToDeleteId = Convert.ToInt32(usersGridView.Rows[e.RowIndex].Cells[0].Value);
+                dBController.DeleteUser(userToDeleteId);
+                UpdateUsers(dBController.RefreshUsers());
+                UpdateGroups(dBController.RefreshGroups());
             }
         }
 
-        private void textBox1_TextChanged_1(object sender, EventArgs e)
+        private void userName_TextChanged(object sender, EventArgs e)
         {
-            if(this.textBox1.Text.Length > 0)
-            {
-                this.button2.Enabled = true;
-            }
-            else
-            {
-                this.button2.Enabled = false;
-            }
-        }
-        private void deleteUserToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.dataGridView2.Rows.RemoveAt(rowIndex);
-            for (int index = 0; index < Users.Count; index++)
-            {
-                if(BlUser.IndexOf(Users[index]) == -1)
-                {
-                    dBController.DeleteUser(Users[index].Id);
-                }
-            }
+            addUser.Enabled = userName.Text.Length > 0;
         }
     }
 }

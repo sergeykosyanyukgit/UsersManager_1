@@ -2,7 +2,6 @@
 using System;
 using System.Data;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UsersManager_1.DTO;
 using UsersManager_1.Helpers;
 using UsersManager_1.Interfaces;
@@ -12,10 +11,8 @@ namespace UsersManager_1
     public class DBController: IDBController
     {
         private SqlConnection Connection { get; set; }
-        private Form1 Form { get; set; }
-        public void StartConnection(Form1 form)
+        public void StartConnection()
         {
-            Form = form;
             var connection = new SqlConnection(DBHelper.Connection);
             try
             {
@@ -30,16 +27,14 @@ namespace UsersManager_1
                 if (connection.State == ConnectionState.Open)
                 {
                     Connection = connection;
-                    Form.UpdateGroups(RefreshGroups(connection));
-                    Form.UpdateUsers(RefreshUsers(connection));
                 }
             }
         }
 
-        public List<Group> RefreshGroups(SqlConnection connection)
+        public List<Group> RefreshGroups()
         {
             var groups = new List<Group>();
-            var command = new SqlCommand(DBHelper.GetGroupsExpression, connection);
+            var command = new SqlCommand(DBHelper.GetGroupsExpression, Connection);
             command.CommandType = CommandType.StoredProcedure;
             var reader = command.ExecuteReader();
             if (reader.HasRows)
@@ -64,13 +59,11 @@ namespace UsersManager_1
 
             var reader = command.ExecuteReader();
             reader.Close();
-
-            Form.UpdateGroups(RefreshGroups(Connection));
         }
-        public List<User> RefreshUsers(SqlConnection connection)
+        public List<User> RefreshUsers()
         {
             var users = new List<User>();
-            var command = new SqlCommand(DBHelper.GetUsersExpression, connection);
+            var command = new SqlCommand(DBHelper.GetUsersExpression, Connection);
             command.CommandType = CommandType.StoredProcedure;
             var reader = command.ExecuteReader();
             if (reader.HasRows)
@@ -108,8 +101,6 @@ namespace UsersManager_1
             command.Parameters.Add(pList);
             var reader = command.ExecuteReader();
             reader.Close();
-            Form.UpdateUsers(RefreshUsers(Connection));
-            Form.UpdateGroups(RefreshGroups(Connection));
         }
 
         public void DeleteUser(int ID_User)
@@ -119,8 +110,6 @@ namespace UsersManager_1
             command.Parameters.AddWithValue("@ID_User", ID_User);
             var reader = command.ExecuteReader();
             reader.Close();
-            Form.UpdateUsers(RefreshUsers(Connection));
-            Form.UpdateGroups(RefreshGroups(Connection));
         }
     }
 }
