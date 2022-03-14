@@ -9,29 +9,32 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UsersManager_1.DTO;
+using UsersManager_1.Interfaces;
+
 namespace UsersManager_1
 {
     public partial class Form1 : Form
     {
-        public List<int> SelectedNewUsergroups { get; set; }
-        public List<Group> Groups { get; set; }
-        public List<User> Users { get; set; }
-        private BindingList<User> blUser = new BindingList<User>();
+        private List<int> SelectedNewUsergroups { get; set; }
+        private List<Group> Groups { get; set; }
+        private List<User> Users { get; set; }
+        private BindingList<User> BlUser { get; set; }
         private int rowIndex;
-        private DBController dBController;
+        private IDBController dBController;
         public Form1()
         {
             SelectedNewUsergroups = new List<int>();
+            BlUser = new BindingList<User>();
             InitializeComponent();
             dBController = new DBController();
             StartConnection(this);
         }
 
-        private async void StartConnection(Form1 form)
+        private void StartConnection(Form1 form)
         {
             try
             {
-                await dBController.StartConnection(form);
+                dBController.StartConnection(form);
             }
             catch (Exception ex)
             {
@@ -82,12 +85,12 @@ namespace UsersManager_1
         public void UpdateUsers(List<User> users)
         {
             this.Users = users;
-            blUser.Clear();
+            BlUser.Clear();
             foreach (var user in users)
             {
-                blUser.Add(user);
+                BlUser.Add(user);
             }
-            dataGridView2.DataSource = blUser;
+            dataGridView2.DataSource = BlUser;
             dataGridView2.Columns[0].HeaderText = "ID сотрудника";
             dataGridView2.Columns[1].HeaderText = "ФИО сотрудника";
             dataGridView2.Columns[2].HeaderText = "Входит в группы";
@@ -152,7 +155,7 @@ namespace UsersManager_1
             this.dataGridView2.Rows.RemoveAt(rowIndex);
             for (int index = 0; index < Users.Count; index++)
             {
-                if(blUser.IndexOf(Users[index]) == -1)
+                if(BlUser.IndexOf(Users[index]) == -1)
                 {
                     dBController.DeleteUser(Users[index].Id);
                 }

@@ -5,20 +5,21 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UsersManager_1.DTO;
 using UsersManager_1.Helpers;
+using UsersManager_1.Interfaces;
 
 namespace UsersManager_1
 {
-    public class DBController
+    public class DBController: IDBController
     {
         private SqlConnection Connection { get; set; }
         private Form1 Form { get; set; }
-        public async Task StartConnection(Form1 form)
+        public void StartConnection(Form1 form)
         {
             Form = form;
             var connection = new SqlConnection(DBHelper.Connection);
             try
             {
-                await connection.OpenAsync();
+                connection.Open();
             }
             catch (SqlException ex)
             {
